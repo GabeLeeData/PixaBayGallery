@@ -21,7 +21,6 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private static final int PICTURE_TYPE = 1;
     private static final int LOADING_TYPE = 2;
     private static final int EXHAUSTED_TYPE = 3;
-    private static final int BIG_PICTURE_TYPE = 4;
 
     private List<Hit> mHits;
     private OnPictureListener mOnPictureListener;
@@ -39,7 +38,7 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
             case PICTURE_TYPE: {
                 view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.layout_hit_list_item, viewGroup, false);
-                return new HitViewHolder(view);
+                return new HitViewHolder(view, mOnPictureListener);
             }
 
             case LOADING_TYPE: {
@@ -51,11 +50,9 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 return new ExhaustedViewHolder(view);
             }
 
-
-
             default:{
                 view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.layout_hit_list_item, viewGroup, false);
-                return new HitViewHolder(view);
+                return new HitViewHolder(view, mOnPictureListener);
             }
 
         }
@@ -159,5 +156,14 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     public void setHits(List<Hit> hits) {
         mHits = hits;
         notifyDataSetChanged();
+    }
+
+    public Hit getSelectedPicture(int position) {
+        if(mHits != null) {
+            if(mHits.size() > 0) {
+                return mHits.get(position);
+            }
+        }
+        return null;
     }
 }

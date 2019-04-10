@@ -61,11 +61,12 @@ public class PictureListActivity extends BaseActivity implements OnPictureListen
         });
     }
 
-
     @Override
     public void onPictureClick(int position) {
         Intent intent = new Intent(this, PictureActivity.class);
         intent.putExtra("picture", mAdapter.getSelectedPicture(position));
         startActivity(intent);
     }
+
+
 }

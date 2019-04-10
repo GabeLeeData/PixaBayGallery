@@ -14,9 +14,13 @@ public class HitViewHolder extends RecyclerView.ViewHolder implements View.OnCli
     TextView user, views, tags;
     AppCompatImageView image;
     CircleImageView userImage;
+    OnPictureListener onPictureListener;
 
-    public HitViewHolder(@NonNull View itemView) {
+    public HitViewHolder(@NonNull View itemView, OnPictureListener onPictureListener) {
         super(itemView);
+
+        this.onPictureListener = onPictureListener;
+
         user = itemView.findViewById(R.id.hit_user);
         views = itemView.findViewById(R.id.hit_views);
         tags = itemView.findViewById(R.id.hit_tags);
@@ -27,6 +31,7 @@ public class HitViewHolder extends RecyclerView.ViewHolder implements View.OnCli
 
     @Override
     public void onClick(View v) {
-
+        onPictureListener.onPictureClick(getAdapterPosition());
     }
+
 }
