@@ -1,5 +1,8 @@
 package gabriellee.project.pixabaygallery.requests;
 
+import android.arch.lifecycle.LiveData;
+
+import gabriellee.project.pixabaygallery.requests.responses.ApiResponse;
 import gabriellee.project.pixabaygallery.requests.responses.PictureResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -9,7 +12,7 @@ public interface PixabayApi {
 
     // SEARCH Image
     @GET("api/")
-    Call<PictureResponse> searchPicture(
+    LiveData<ApiResponse<PictureResponse>> searchPicture(
             @Query("key") String key,
             @Query("q") String query,
             @Query("page") String page

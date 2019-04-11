@@ -2,39 +2,41 @@ package gabriellee.project.pixabaygallery.util;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class AppExecutors {
+
     private static AppExecutors instance;
 
-    public static AppExecutors getInstance() {
-        if(instance == null) {
+    public static AppExecutors getInstance(){
+        if(instance == null){
             instance = new AppExecutors();
         }
         return instance;
     }
 
-    private final Executor mDiskIO = Executors.newSingleThreadExecutor();
+    private final Executor mDiskIO = Executors.newSingleThreadExecutor(); // Will not use additional threads
 
-    private final Executor mMainThreadExecutor = new MainThreadExecutor();
+    private final Executor mMainThreadExecutor = new MainThreadExecutor(); // executes on main thread
 
     public Executor diskIO() {
         return mDiskIO;
     }
 
-    public Executor mainThread() {
+    public Executor mainThread(){
         return mMainThreadExecutor;
     }
 
-    private static class MainThreadExecutor implements Executor{
 
+    private static class MainThreadExecutor implements Executor {
         private Handler mainThreadHandler = new Handler(Looper.getMainLooper());
 
         @Override
-        public void execute(Runnable command) {
+        public void execute(@NonNull Runnable command) {
             mainThreadHandler.post(command);
         }
     }

@@ -54,10 +54,9 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.layout_hit_list_item, viewGroup, false);
                 return new HitViewHolder(view, mOnPictureListener);
             }
-
         }
-
     }
+
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
@@ -94,13 +93,28 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         else if (mHits.get(position).getTags().equals("EXHAUSTED...")) {
             return EXHAUSTED_TYPE;
         }
-
-        else if (position == mHits.size() - 1 && position != 0 && !mHits.get(position).getTags().equals("EXHAUSTED...")){
-            return LOADING_TYPE;
-        }
         else {
             return PICTURE_TYPE;
         }
+    }
+
+    //Display loading during search request.
+    public void displayOnlyLoading(){
+        clearRecipesList();
+        Hit hit = new Hit();
+        hit.setTags("LOADING...");
+        mHits.add(hit);
+        notifyDataSetChanged();
+    }
+
+    private void clearRecipesList() {
+        if(mHits == null) {
+            mHits = new ArrayList<>();
+        }
+        else {
+            mHits.clear();
+        }
+        notifyDataSetChanged();
     }
 
     public void setQueryExhausted(){
@@ -111,27 +125,33 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         notifyDataSetChanged();
     }
 
-    private void hideLoading(){
+    public void hideLoading(){
         if(isLoading()) {
-            for (Hit hit: mHits) {
-                if(hit.getTags().equals("LOADING...")) {
-                    mHits.remove(hit);
-                }
+            if(mHits.get(0).getTags().equals("LOADING...")) {
+                mHits.remove(0);
+            }
+            else if(mHits.get(mHits.size() -1).equals("LOADING...")) {
+                mHits.remove(mHits.size() - 1);
             }
             notifyDataSetChanged();
         }
     }
 
+    //Pagination Loading.
     public void displayLoading(){
+        if(mHits == null) {
+            mHits = new ArrayList<>();
+        }
+
         if(!isLoading()){
             Hit hit = new Hit();
             hit.setTags("LOADING...");
-            List<Hit> loadingList = new ArrayList<>();
-            loadingList.add(hit);
-            mHits = loadingList;
+            mHits.add(hit);
             notifyDataSetChanged();
         }
     }
+
+
 
     private boolean isLoading(){
         if (mHits != null) {
