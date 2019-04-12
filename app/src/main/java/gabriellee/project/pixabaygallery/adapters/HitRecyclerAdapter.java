@@ -130,13 +130,6 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         notifyDataSetChanged();
     }
 
-    public void newSearch() {
-        Hit newsearch = new Hit();
-        newsearch.setTags("New");
-        mHits.add(newsearch);
-        notifyDataSetChanged();
-    }
-
     public void hideLoading(){
         if(isLoading()) {
             if(mHits.get(0).getTags().equals("LOADING...")) {
