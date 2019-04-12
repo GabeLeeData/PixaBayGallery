@@ -1,21 +1,32 @@
 package gabriellee.project.pixabaygallery.adapters;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.ListPreloader;
+import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.util.ViewPreloadSizeProvider;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import gabriellee.project.pixabaygallery.R;
 import gabriellee.project.pixabaygallery.models.Hit;
 
-public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+import static android.support.constraint.Constraints.TAG;
+
+public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements
+        ListPreloader.PreloadModelProvider<String> {
 
 
     private static final int PICTURE_TYPE = 1;
@@ -24,9 +35,13 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     private List<Hit> mHits;
     private OnPictureListener mOnPictureListener;
+    private RequestManager requestManager;
+    private ViewPreloadSizeProvider<String> preloadSizeProvider;
 
-    public HitRecyclerAdapter(OnPictureListener mOnPictureListener) {
+    public HitRecyclerAdapter(OnPictureListener mOnPictureListener, RequestManager requestManager, ViewPreloadSizeProvider<String> viewPreloadSizeProvider) {
         this.mOnPictureListener = mOnPictureListener;
+        this.requestManager = requestManager;
+        this.preloadSizeProvider = viewPreloadSizeProvider;
     }
 
     @NonNull
@@ -34,11 +49,12 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
 
         View view = null;
+        Log.d(TAG, "onCreateViewHolder: " + i);
         switch(i) {
 
             case PICTURE_TYPE: {
                 view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.layout_hit_list_item, viewGroup, false);
-                return new HitViewHolder(view, mOnPictureListener);
+                return new HitViewHolder(view, mOnPictureListener, requestManager, preloadSizeProvider);
             }
 
             case LOADING_TYPE: {
@@ -52,7 +68,7 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
             default:{
                 view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.layout_hit_list_item, viewGroup, false);
-                return new HitViewHolder(view, mOnPictureListener);
+                return new HitViewHolder(view, mOnPictureListener, requestManager, preloadSizeProvider);
             }
         }
     }
@@ -63,24 +79,7 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
         int itemViewType = getItemViewType(i);
         if(itemViewType == PICTURE_TYPE) {
-            RequestOptions options = new RequestOptions()
-                    .centerCrop()
-                    .error(R.drawable.ic_launcher_background);
-
-            Glide.with(((HitViewHolder) viewHolder).itemView)
-                    .setDefaultRequestOptions(options)
-                    .load(mHits.get(i).getWebformatURL())
-                    .into(((HitViewHolder) viewHolder).image);
-
-
-            Glide.with(((HitViewHolder) viewHolder).itemView)
-                    .setDefaultRequestOptions(options)
-                    .load(mHits.get(i).getUserImageURL())
-                    .into(((HitViewHolder) viewHolder).userImage);
-
-            ((HitViewHolder)viewHolder).user.setText(mHits.get(i).getUser());
-            ((HitViewHolder)viewHolder).views.setText(String.valueOf(mHits.get(i).getViews()));
-            ((HitViewHolder)viewHolder).tags.setText(mHits.get(i).getTags());
+            ((HitViewHolder)viewHolder).onBind(mHits.get(i));
         }
 
     }
@@ -93,6 +92,9 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         else if (mHits.get(position).getTags().equals("EXHAUSTED...")) {
             return EXHAUSTED_TYPE;
         }
+        else if (mHits.get(position).getTags().equals("New")) {
+            return PICTURE_TYPE;
+        }
         else {
             return PICTURE_TYPE;
         }
@@ -100,14 +102,16 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     //Display loading during search request.
     public void displayOnlyLoading(){
-        clearRecipesList();
+        clearHitList();
         Hit hit = new Hit();
         hit.setTags("LOADING...");
         mHits.add(hit);
         notifyDataSetChanged();
+
+
     }
 
-    private void clearRecipesList() {
+    public void clearHitList() {
         if(mHits == null) {
             mHits = new ArrayList<>();
         }
@@ -118,10 +122,18 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     }
 
     public void setQueryExhausted(){
+        Log.d(TAG, "setQueryExhausted: QUERY HAS BEEN EXHAUSTED");
         hideLoading();
         Hit exhaustedHit = new Hit();
         exhaustedHit.setTags("EXHAUSTED...");
         mHits.add(exhaustedHit);
+        notifyDataSetChanged();
+    }
+
+    public void newSearch() {
+        Hit newsearch = new Hit();
+        newsearch.setTags("New");
+        mHits.add(newsearch);
         notifyDataSetChanged();
     }
 
@@ -185,5 +197,22 @@ public class HitRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             }
         }
         return null;
+    }
+
+
+    @NonNull
+    @Override
+    public List<String> getPreloadItems(int position) {
+        String url = mHits.get(position).getWebformatURL();
+        if(TextUtils.isEmpty(url)) {
+            return Collections.emptyList();
+        }
+        return Collections.singletonList(url);
+    }
+
+    @Nullable
+    @Override
+    public RequestBuilder<?> getPreloadRequestBuilder(@NonNull String item) {
+        return requestManager.load(item);
     }
 }

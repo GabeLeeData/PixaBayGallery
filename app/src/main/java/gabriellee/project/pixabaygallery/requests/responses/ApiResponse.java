@@ -15,6 +15,13 @@ public class ApiResponse<T> {
         if(response.isSuccessful()) {
             T body = response.body();
 
+            if(body instanceof PictureResponse) {
+                if(!CheckApiKey.isApiKeyValid((PictureResponse)body)) {
+                    String errorMsg = "Api key is invalid or expired.";
+                    return new ApiErrorResponse<>(errorMsg);
+                }
+            }
+
             if(body == null || response.code() == 204) { //204 is empty response code
                 return new ApiEmptyResponse<>();
             }

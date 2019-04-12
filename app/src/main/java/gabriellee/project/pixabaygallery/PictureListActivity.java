@@ -3,6 +3,7 @@ package gabriellee.project.pixabaygallery;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -12,6 +13,12 @@ import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
+import com.bumptech.glide.integration.recyclerview.RecyclerViewPreloader;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.util.ViewPreloadSizeProvider;
 
 import java.util.List;
 
@@ -46,6 +53,7 @@ public class PictureListActivity extends BaseActivity implements OnPictureListen
         initSearchView();
         subscribeObservers();
         setSupportActionBar((Toolbar)findViewById(R.id.toolbar));
+        searchPicturesApi("food");
 
     }
 
@@ -63,7 +71,7 @@ public class PictureListActivity extends BaseActivity implements OnPictureListen
                                     mAdapter.displayLoading();
                                 }
                                 else {
-                                    mAdapter.displayLoading();
+                                    mAdapter.displayOnlyLoading();
                                 }
                                 break;
                             }
@@ -71,10 +79,10 @@ public class PictureListActivity extends BaseActivity implements OnPictureListen
                             case ERROR: {
                                 Log.e(TAG, "onChanged: cannot refresh the cahce." + listResource.message);
                                 Log.e(TAG, "onChanged: Error message: " + listResource.message );
-                                Log.e(TAG, "onChanged: status: ERROR, #recipes: " +listResource.data.size());
+                                Log.e(TAG, "onChanged: status: ERROR, #pPictures: " +listResource.data.size());
                                 mAdapter.hideLoading();
                                 mAdapter.setHits(listResource.data);
-                                Toast.makeText(PictureListActivity.this, listResource.message, Toast.LENGTH_SHORT).show();
+                               // Toast.makeText(PictureListActivity.this, listResource.message, Toast.LENGTH_SHORT).show();
 
                                 if(listResource.message.equals(QUERY_EXHAUSTED)) {
                                     mAdapter.setQueryExhausted();
@@ -84,7 +92,7 @@ public class PictureListActivity extends BaseActivity implements OnPictureListen
 
                             case SUCCESS: {
                                 Log.d(TAG, "onChanged: cache has been refreshed.");
-                                Log.d(TAG, "onChanged: status: SUCCESS, #Recipes: " + listResource.data.size());
+                                Log.d(TAG, "onChanged: status: SUCCESS, Pictures: " + listResource.data.size());
                                 mAdapter.hideLoading();
                                 mAdapter.setHits(listResource.data);
                                 break;
@@ -97,16 +105,44 @@ public class PictureListActivity extends BaseActivity implements OnPictureListen
         });
     }
 
+    private RequestManager initGlide() {
+
+        RequestOptions options = new RequestOptions()
+                .placeholder(R.drawable.white_background)
+                .error(R.drawable.white_background);
+
+        return Glide.with(this)
+                .setDefaultRequestOptions(options);
+    }
+
+
+
     private void searchPicturesApi(String query){
+        mRecyclerView.smoothScrollToPosition(0);
         mPictureListViewModel.searchPicturesApi(query, 1);
     }
 
     private void initRecyclerView() {
-        mAdapter = new HitRecyclerAdapter(this);
+        ViewPreloadSizeProvider<String> viewPreloader = new ViewPreloadSizeProvider<>();
+        mAdapter = new HitRecyclerAdapter(this, initGlide(), viewPreloader);
         VerticalSpacingItemDecorator itemDecorator = new VerticalSpacingItemDecorator(40);
         mRecyclerView.addItemDecoration(itemDecorator);
-        mRecyclerView.setAdapter(mAdapter);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        RecyclerViewPreloader<String> preloader = new RecyclerViewPreloader<String>(Glide.with(this), mAdapter, viewPreloader, 20);
+
+        mRecyclerView.addOnScrollListener(preloader);
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+
+                if(!mRecyclerView.canScrollVertically(1)) {
+                    mPictureListViewModel.searchNextPage();
+                }
+            }
+        });
+        mRecyclerView.setAdapter(mAdapter);
     }
 
     private void initSearchView(){
@@ -114,12 +150,16 @@ public class PictureListActivity extends BaseActivity implements OnPictureListen
             @Override
             public boolean onQueryTextSubmit(String s) {
                 Log.e(TAG, "onQueryTextSubmit: " + s );
+
                 searchPicturesApi(s);
+
+
                 return false;
             }
 
             @Override
             public boolean onQueryTextChange(String s) {
+
                 return false;
             }
         });
@@ -131,6 +171,5 @@ public class PictureListActivity extends BaseActivity implements OnPictureListen
         intent.putExtra("picture", mAdapter.getSelectedPicture(position));
         startActivity(intent);
     }
-
 
 }

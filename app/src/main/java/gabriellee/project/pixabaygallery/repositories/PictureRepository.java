@@ -42,6 +42,7 @@ public class PictureRepository {
             protected void saveCallResult(@NonNull PictureResponse item) {
                 if(item.getHit() != null) { //Recipe list will be null if the api key is expired
 
+
                     Hit[] hits = new Hit[item.getHit().size()];
                     int index = 0;
                     for (long rowid: pictureDao.insertPictures((Hit[]) (item.getHit().toArray(hits)))) {
@@ -88,7 +89,6 @@ public class PictureRepository {
                         );
             }
         }.getAsLiveData();
-
     }
 
 
